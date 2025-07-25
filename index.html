@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CashBook - Smart Expense Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg">
+  <meta name="theme-color" content="#1e88e5">
+  <meta name="description" content="Smart expense tracker with family sharing and AI insights">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Background Animation -->
+  <div class="bg-animation">
+    <div class="floating-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+      <div class="shape shape-5"></div>
+    </div>
+  </div>
+
+  <div class="splash-container">
+    <div class="splash-content">
+      <!-- App Logo Section -->
+      <div class="app-logo">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="32" fill="url(#logoGradient)"/>
+              <path d="M32 16C38.6274 16 44 21.3726 44 28C44 34.6274 38.6274 40 32 40C25.3726 40 20 34.6274 20 28C20 21.3726 25.3726 16 32 16ZM32 22C28.6863 22 26 24.6863 26 28C26 31.3137 28.6863 34 32 34C35.3137 34 38 31.3137 38 28C38 24.6863 35.3137 22 32 22ZM32 25C33.6569 25 35 26.3431 35 28C35 29.6569 33.6569 31 32 31C30.3431 31 29 29.6569 29 28C29 26.3431 30.3431 25 32 25Z" fill="white"/>
+              <path d="M28 44H36C37.1046 44 38 44.8954 38 46C38 47.1046 37.1046 48 36 48H28C26.8954 48 26 47.1046 26 46C26 44.8954 26.8954 44 28 44Z" fill="white"/>
+              <defs>
+                <linearGradient id="logoGradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#1e88e5"/>
+                  <stop offset="1" stop-color="#42a5f5"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="logo-pulse"></div>
+        </div>
+        <h1 class="app-title" data-key="appTitle">CashBook</h1>
+        <p class="app-subtitle" data-key="appSubtitle">Smart Expense Tracker</p>
+      </div>
+      
+      <!-- Feature Highlights Grid -->
+      <div class="feature-highlights">
+        <div class="feature-item" data-aos="fade-up" data-aos-delay="100">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="feature-content">
+            <h3 data-key="trackExpensesTitle">Track Daily Expenses</h3>
+            <p data-key="trackExpensesDesc">Monitor your spending with ease</p>
+          </div>
+        </div>
+        
+        <div class="feature-item" data-aos="fade-up" data-aos-delay="200">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-6h3v7c0 .55.45 1 1 1h9c.55 0 1-.45 1-1v-7h3v6h4v-8c0-1.11-.89-2-2-2h-3.5l-1.79-1.79C16.15 6.65 15.24 6 14.24 6H9.76c-1 0-1.91.65-2.47 1.21L5.5 9H2c-1.11 0-2 .89-2 2v8h4v-1z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="feature-content">
+            <h3 data-key="familySharingTitle">Family Sharing</h3>
+            <p data-key="familySharingDesc">Share expenses with loved ones</p>
+          </div>
+        </div>
+        
+        <div class="feature-item" data-aos="fade-up" data-aos-delay="300">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="feature-content">
+            <h3 data-key="smartReportsTitle">Smart Reports</h3>
+            <p data-key="smartReportsDesc">Get insights and analytics</p>
+          </div>
+        </div>
+        
+        <div class="feature-item" data-aos="fade-up" data-aos-delay="400">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM15.1 8H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="feature-content">
+            <h3 data-key="securePrivateTitle">Secure & Private</h3>
+            <p data-key="securePrivateDesc">Your data is always protected</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Call to Action Buttons -->
+      <div class="auth-actions">
+        <a href="login.html" class="btn btn-primary btn-large">
+          <span data-key="login">Login</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 12h14m-7-7 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="signup.html" class="btn btn-secondary btn-large">
+          <span data-key="signup">Sign Up</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm4 6v4m2-2h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+      
+      <!-- Language Toggle -->
+      <div class="language-toggle">
+        <button id="langToggle" class="lang-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <span data-key="english">English</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="firebase-config.js"></script>
+  <script type="module">
+    import { initLanguage, changeLanguage, getCurrentLanguage } from './js/i18n.js';
+    
+    // Initialize theme
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    
+    // Initialize language toggle
+    function initLanguageToggle() {
+      const langToggle = document.getElementById('langToggle');
+      if (langToggle) {
+        langToggle.addEventListener('click', async () => {
+          const currentLang = getCurrentLanguage();
+          const newLang = currentLang === 'en' ? 'bn' : 'en';
+          await changeLanguage(newLang);
+          updateLanguageDisplay();
+        });
+      }
+    }
+    
+    // Update language display
+    function updateLanguageDisplay() {
+      const currentLang = getCurrentLanguage();
+      const langToggle = document.getElementById('langToggle');
+      if (langToggle) {
+        const langText = langToggle.querySelector('span');
+        if (langText) {
+          langText.textContent = currentLang === 'en' ? 'English' : 'বাংলা';
+        }
+      }
+    }
+    
+    // Initialize language system
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTheme();
+      initLanguageToggle();
+      await initLanguage();
+      updateLanguageDisplay();
+    });
+  </script>
+  <script src="js/pwa.js"></script>
+</body>
+</html>

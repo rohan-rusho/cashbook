@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CashBook</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#1e88e5">
+</head>
+<body>
+    <main class="center">
+        <div class="auth-container">
+            <div class="text-center mb-4">
+                <div class="logo-icon">💰</div>
+                <h1>Welcome Back</h1>
+                <p class="text-secondary">Sign in to your account</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username" class="form-label" data-key="username">Username</label>
+                    <input type="text" id="username" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label" data-key="password">Password</label>
+                    <input type="password" id="password" class="form-input" required>
+                </div>
+
+                <div id="errorMsg" class="alert alert-error" style="display: none;"></div>
+                <div id="successMsg" class="alert alert-success" style="display: none;"></div>
+
+                <button type="submit" class="btn btn-primary btn-full" data-key="login">
+                    <span class="loading hidden"></span>
+                    Login
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <p class="text-secondary">Or continue with</p>
+                <button id="googleLogin" class="btn btn-secondary btn-full mt-2">
+                    🔗 Google
+                </button>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="forgot.html" class="text-primary" data-key="forgotPassword">Forgot Password?</a>
+            </div>
+
+            <div class="text-center mt-3">
+                <p class="text-secondary">Don't have an account? 
+                    <a href="signup.html" class="text-primary" data-key="signUp">Sign Up</a>
+                </p>
+            </div>
+
+            <div class="text-center mt-3">
+                <button id="langToggle" class="lang-btn" style="background: #ffffff !important; border: 2px solid #1e88e5 !important; color: #1e88e5 !important; padding: 12px 24px !important; border-radius: 50px !important; font-weight: 600 !important; display: inline-flex !important; align-items: center !important; gap: 8px !important; box-shadow: 0 4px 15px rgba(30, 136, 229, 0.3) !important; cursor: pointer !important; min-width: 120px !important; justify-content: center !important; opacity: 1 !important; visibility: visible !important;">
+                    <span>🌐</span>
+                    <span data-key="english">English</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/theme-init.js"></script>
+    
+    <script>
+        // Working login implementation
+        let auth, db, realtimeDB, googleProvider;
+        
+        function initFirebase() {
+            try {
+                console.log('🔥 Starting Firebase initialization...');
+                
+                if (typeof firebase === 'undefined') {
+                    console.error('❌ Firebase not loaded!');
+                    return false;
+                }
+                
+                if (typeof firebaseConfig === 'undefined') {
+                    console.error('❌ Firebase config not found!');
+                    return false;
+                }
+                
+                console.log('✅ Firebase SDK and config available');
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('✅ Firebase app initialized');
+                } else {
+                    console.log('✅ Firebase app already initialized');
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                realtimeDB = firebase.database();
+                googleProvider = new firebase.auth.GoogleAuthProvider();
+                
+                // Set Firebase Auth persistence to LOCAL (persists across browser sessions)
+                auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                    .then(() => {
+                        console.log('✅ Firebase Auth persistence set to LOCAL');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Error setting Firebase Auth persistence:', error);
+                    });
+                
+                console.log('✅ Firebase services initialized');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Firebase initialization error:', error);
+                return false;
+            }
+        }
+        
+        function initLogin() {
+            console.log('🔄 Initializing login...');
+            
+            const loginForm = document.getElementById('loginForm');
+            const googleLoginBtn = document.getElementById('googleLogin');
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+            
+            if (!loginForm) {
+                console.error('❌ Login form not found!');
+                return;
+            }
+            
+            console.log('✅ Login form found');
+            
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('🔐 Login form submitted');
+                
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                const usernameOrEmail = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                
+                console.log('📋 Login data:', {usernameOrEmail});
+                
+                // Clear messages
+                errorMsg.style.display = 'none';
+                successMsg.style.display = 'none';
+                errorMsg.className = 'alert alert-error';
+                successMsg.className = 'alert alert-success';
+                
+                // Validation
+                if (!usernameOrEmail || !password) {
+                    console.log('❌ Validation failed: Missing fields');
+                    errorMsg.textContent = 'Please fill in all fields';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
+                console.log('✅ Validation passed');
+                
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Signing In...';
+                    
+                    // Clear any existing auth state first
+                    console.log('🔄 Clearing any existing auth state...');
+                    if (auth.currentUser) {
+                        await auth.signOut();
+                        console.log('✅ Signed out previous user');
+                    }
+                    
+                    // Wait a moment for auth state to clear completely
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    let emailToUse = usernameOrEmail;
+                    
+                    // Check if input is an email or username
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(usernameOrEmail)) {
+                        console.log('🔍 Input is username, looking up email...');
+                        
+                        // Look up email from username in Firestore
+                        const usernameQuery = await db.collection('users').where('username', '==', usernameOrEmail).get();
+                        
+                        if (usernameQuery.empty) {
+                            console.log('❌ Username not found');
+                            errorMsg.textContent = 'Username not found. Please check your username or sign up.';
+                            errorMsg.style.display = 'block';
+                            return;
+                        }
+                        
+                        const userDoc = usernameQuery.docs[0];
+                        emailToUse = userDoc.data().email;
+                        console.log('✅ Email found for username:', emailToUse);
+                    } else {
+                        console.log('✅ Input is email, using directly');
+                    }
+                    
+                    console.log('🔐 Attempting login with email:', emailToUse);
+                    const userCredential = await auth.signInWithEmailAndPassword(emailToUse, password);
+                    const user = userCredential.user;
+                    console.log('✅ User logged in:', user.uid);
+                    
+                    // Refresh the user to get latest verification status
+                    await user.reload();
+                    console.log('🔄 User data refreshed');
+                    console.log('📧 Email verified status:', user.emailVerified);
+                    
+                    // Check if email is verified
+                    if (!user.emailVerified) {
+                        console.log('❌ Email not verified');
+                        await auth.signOut(); // Sign out the user
+                        errorMsg.textContent = 'Please verify your email before logging in. Check your inbox for a verification email.';
+                        errorMsg.style.display = 'block';
+                        
+                        // Add option to resend verification email
+                        const existingResendBtn = errorMsg.querySelector('.btn-secondary');
+                        if (!existingResendBtn) {
+                            const resendBtn = document.createElement('button');
+                            resendBtn.textContent = 'Resend Verification Email';
+                            resendBtn.className = 'btn btn-secondary btn-sm mt-2';
+                            resendBtn.onclick = async () => {
+                                try {
+                                    // Sign in again to get user object
+                                    const tempUser = await auth.signInWithEmailAndPassword(emailToUse, password);
+                                    await tempUser.user.sendEmailVerification();
+                                    await auth.signOut();
+                                    alert('Verification email sent! Please check your inbox.');
+                                } catch (error) {
+                                    console.error('Error sending verification email:', error);
+                                    alert('Failed to send verification email. Please try again.');
+                                }
+                            };
+                            
+                            // Add resend button after error message
+                            errorMsg.appendChild(resendBtn);
+                        }
+                        
+                        return;
+                    }
+                    
+                    console.log('✅ Email verified, login successful');
+                    
+                    // Update user verification status in database
+                    try {
+                        await db.collection('users').doc(user.uid).update({
+                            emailVerified: true
+                        });
+                        console.log('✅ Updated verification status in Firestore');
+                    } catch (error) {
+                        console.log('⚠️ Could not update verification status:', error);
+                    }
+                    
+                    successMsg.textContent = 'Login successful! Redirecting...';
+                    successMsg.style.display = 'block';
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('❌ Login error:', error);
+                    console.error('❌ Error code:', error.code);
+                    console.error('❌ Error message:', error.message);
+                    
+                    let errorMessage = 'Login failed. Please try again.';
+                    
+                    if (error.code === 'auth/wrong-password') {
+                        errorMessage = 'Incorrect password. Please try again.';
+                    } else if (error.code === 'auth/user-not-found') {
+                        errorMessage = 'No account found with this email. Please sign up first.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'Invalid email format.';
+                    } else if (error.code === 'auth/user-disabled') {
+                        errorMessage = 'This account has been disabled.';
+                    } else if (error.code === 'auth/too-many-requests') {
+                        errorMessage = 'Too many failed attempts. Please try again later.';
+                    } else if (error.code === 'auth/network-request-failed') {
+                        errorMessage = 'Network error. Please check your connection and try again.';
+                    } else if (error.code === 'auth/invalid-credential') {
+                        errorMessage = 'Invalid credentials. Please check your email and password.';
+                    } else {
+                        errorMessage = `Login failed: ${error.message}`;
+                    }
+                    
+                    errorMsg.textContent = errorMessage;
+                    errorMsg.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Login';
+                }
+            });
+            
+            // Google login
+            if (googleLoginBtn) {
+                console.log('✅ Google login button found');
+                
+                googleLoginBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    console.log('🔗 Google login clicked');
+                    
+                    try {
+                        googleLoginBtn.disabled = true;
+                        googleLoginBtn.textContent = 'Loading...';
+                        
+                        const result = await auth.signInWithPopup(googleProvider);
+                        const user = result.user;
+                        console.log('✅ Google user signed in:', user.uid);
+                        
+                        successMsg.textContent = 'Google login successful! Redirecting...';
+                        successMsg.style.display = 'block';
+                        
+                        // Redirect to dashboard
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                        
+                    } catch (error) {
+                        console.error('❌ Google login error:', error);
+                        
+                        let errorMessage = 'Google login failed. Please try again.';
+                        
+                        if (error.code === 'auth/popup-closed-by-user') {
+                            errorMessage = 'Login cancelled. Please try again.';
+                        } else if (error.code === 'auth/cancelled-popup-request') {
+                            errorMessage = 'Please try again. Only one login window can be open at a time.';
+                        }
+                        
+                        errorMsg.textContent = errorMessage;
+                        errorMsg.style.display = 'block';
+                    } finally {
+                        googleLoginBtn.disabled = false;
+                        googleLoginBtn.textContent = '🔗 Google';
+                    }
+                });
+            }
+        }
+        
+        // Initialize language toggle
+        function initLanguageToggle() {
+            const langToggle = document.getElementById('langToggle');
+            if (langToggle) {
+                const currentLang = localStorage.getItem('language') || 'en';
+                langToggle.innerHTML = currentLang === 'en' ? '<span>🌐</span><span>English</span>' : '<span>🌐</span><span>বাংলা</span>';
+
+                langToggle.addEventListener('click', () => {
+                    const currentLang = localStorage.getItem('language') || 'en';
+                    const newLang = currentLang === 'en' ? 'bn' : 'en';
+                    localStorage.setItem('language', newLang);
+                    window.location.reload();
+                });
+            }
+        }
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 DOM loaded, initializing login page...');
+            
+            setTimeout(() => {
+                const firebaseReady = initFirebase();
+                
+                if (firebaseReady) {
+                    console.log('✅ Firebase ready, setting up auth state listener...');
+                    
+                    // Listen for auth state changes
+                    auth.onAuthStateChanged(user => {
+                        if (user) {
+                            console.log('🔍 User already logged in:', user.email);
+                            
+                            // Check if email is verified
+                            if (user.emailVerified) {
+                                console.log('✅ User is verified, redirecting to dashboard...');
+                                window.location.href = 'dashboard.html';
+                            } else {
+                                console.log('⚠️ User email not verified, staying on login page');
+                            }
+                        } else {
+                            console.log('👤 No user logged in, initializing login form');
+                        }
+                    });
+                    
+                    initLogin();
+                    initLanguageToggle();
+                } else {
+                    console.error('❌ Firebase not ready, cannot initialize login');
+                }
+            }, 100);
+        });
+    </script>
+    <script src="js/i18n.js"></script>
+</body>
+</html>

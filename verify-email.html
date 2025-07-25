@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - CashBook</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main class="center">
+        <div class="auth-container">
+            <div class="text-center mb-4">
+                <div class="logo-icon">📧</div>
+                <h1>Verify Your Email</h1>
+                <p class="text-secondary">Please check your email and click the verification link</p>
+            </div>
+
+            <div class="text-center">
+                <div class="alert alert-info mb-4">
+                    <strong>Email Verification Required</strong><br>
+                    We've sent a verification email to your inbox. Please click the verification link in the email to activate your account.
+                </div>
+
+                <div class="mb-4">
+                    <h3>What to do next:</h3>
+                    <ol class="text-left">
+                        <li>Check your email inbox</li>
+                        <li>Look for an email from Firebase Auth</li>
+                        <li>Click the verification link in the email</li>
+                        <li>Return here and try logging in</li>
+                    </ol>
+                </div>
+
+                <div class="mb-4">
+                    <button id="resendEmail" class="btn btn-secondary">Resend Verification Email</button>
+                </div>
+
+                <div class="mb-4">
+                    <a href="login.html" class="btn btn-primary">Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        const auth = firebase.auth();
+        
+        // Check if user is already verified
+        auth.onAuthStateChanged(user => {
+            if (user && user.emailVerified) {
+                // User is verified, redirect to dashboard
+                window.location.href = 'dashboard.html';
+            }
+        });
+        
+        // Resend verification email
+        document.getElementById('resendEmail').addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    await user.sendEmailVerification();
+                    alert('Verification email sent! Please check your inbox.');
+                } catch (error) {
+                    console.error('Error sending verification email:', error);
+                    alert('Failed to send verification email. Please try again.');
+                }
+            } else {
+                alert('No user logged in. Please sign up first.');
+            }
+        });
+    </script>
+</body>
+</html>

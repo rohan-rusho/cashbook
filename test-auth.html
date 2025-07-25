@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Test - CashBook</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <main class="center">
+        <div class="auth-container">
+            <h1>Authentication Test</h1>
+            
+            <div id="authStatus"></div>
+            
+            <div class="mb-4">
+                <h3>Quick Signup Test</h3>
+                <form id="testSignupForm">
+                    <input type="text" id="testFullName" placeholder="Full Name" value="Test User" required>
+                    <input type="text" id="testUsername" placeholder="Username" value="testuser123" required>
+                    <input type="email" id="testEmail" placeholder="Email" value="test@example.com" required>
+                    <input type="tel" id="testMobile" placeholder="Mobile" value="+1234567890" required>
+                    <input type="password" id="testPassword" placeholder="Password" value="password123" required>
+                    <input type="password" id="testConfirmPassword" placeholder="Confirm Password" value="password123" required>
+                    <button type="submit" class="btn btn-primary">Test Signup</button>
+                </form>
+            </div>
+            
+            <div class="mb-4">
+                <h3>Logout Test</h3>
+                <button id="logoutBtn" class="btn btn-error">Test Logout</button>
+            </div>
+            
+            <div id="testResults"></div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusDiv = document.getElementById('authStatus');
+            const resultsDiv = document.getElementById('testResults');
+            
+            // Monitor auth state
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            User logged in: ${user.email} (${user.uid})
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            No user logged in
+                        </div>
+                    `;
+                }
+            });
+            
+            // Test signup form
+            document.getElementById('testSignupForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const fullName = document.getElementById('testFullName').value;
+                const username = document.getElementById('testUsername').value;
+                const email = document.getElementById('testEmail').value;
+                const mobile = document.getElementById('testMobile').value;
+                const password = document.getElementById('testPassword').value;
+                
+                try {
+                    resultsDiv.innerHTML = '<div class="alert alert-info">Testing signup...</div>';
+                    
+                    // Create user account
+                    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+                    
+                    // Update profile
+                    await user.updateProfile({
+                        displayName: fullName
+                    });
+                    
+                    // Prepare user data
+                    const userData = {
+                        fullName,
+                        username,
+                        email,
+                        mobile,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        emailVerified: true,
+                        profilePicture: '',
+                        currency: 'BDT',
+                        language: 'en',
+                        theme: 'light'
+                    };
+                    
+                    // Save to Firestore
+                    await firebase.firestore().collection('users').doc(user.uid).set(userData);
+                    
+                    // Save to Realtime Database
+                    const realtimeUserData = {
+                        ...userData,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    };
+                    await firebase.database().ref('users/' + user.uid).set(realtimeUserData);
+                    
+                    resultsDiv.innerHTML = '<div class="alert alert-success">Signup successful! User created and saved to databases.</div>';
+                    
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="alert alert-error">Signup failed: ${error.message}</div>`;
+                }
+            });
+            
+            // Test logout
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                try {
+                    await firebase.auth().signOut();
+                    resultsDiv.innerHTML = '<div class="alert alert-success">Logout successful!</div>';
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="alert alert-error">Logout failed: ${error.message}</div>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

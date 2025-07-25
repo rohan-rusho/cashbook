@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family - CashBook</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#1e88e5">
+</head>
+<body>
+    <header class="dash-header">
+        <div class="flex-between">
+            <div>
+                <h1 data-key="family">Family Sharing</h1>
+                <p class="text-secondary">Share expenses with family members</p>
+            </div>
+            <div class="flex-between">
+                <button id="mobileMenuButton" class="mobile-menu-button mobile-only">☰</button>
+                <div class="flex desktop-only" id="desktopActions">
+                    <button id="logoutHeaderBtn" class="btn btn-sm btn-error">🚪 Logout</button>
+                    <div class="theme-toggle" id="themeToggle">
+                        <span>🌙</span>
+                        <div class="theme-toggle-switch" id="themeSwitch"></div>
+                        <span>☀️</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="dash-nav">
+            <a href="dashboard.html" class="nav-link" data-key="dashboard">Dashboard</a>
+            <a href="report.html" class="nav-link" data-key="reports">Reports</a>
+            <a href="family.html" class="nav-link active" data-key="family">Family</a>
+            <a href="profile.html" class="nav-link" data-key="profile">Profile</a>
+        </nav>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <h3>Menu</h3>
+            <button class="mobile-menu-close" id="mobileMenuClose">×</button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <a href="dashboard.html" data-key="dashboard">📊 Dashboard</a>
+            <a href="report.html" data-key="reports">📈 Reports</a>
+            <a href="family.html" class="active" data-key="family">👨‍👩‍👧‍👦 Family</a>
+            <a href="profile.html" data-key="profile">👤 Profile</a>
+        </nav>
+        <div class="mobile-menu-actions">
+            <div class="theme-toggle" id="mobileThemeToggle">
+                <span>🌙</span>
+                <div class="theme-toggle-switch" id="mobileThemeSwitch"></div>
+                <span>☀️</span>
+            </div>
+            <button id="langToggle" class="lang-btn">🌐 English</button>
+            <button id="logoutBtn" class="btn btn-error" data-key="logout">Logout</button>
+        </div>
+    </div>
+
+    <main class="container">
+        <div class="family-page-grid">
+            <!-- Add Family Member -->
+            <div class="card family-card">
+                <div class="card-header">
+                    <h3 class="card-title" data-key="addFamilyMember">
+                        <span class="card-icon">👨‍👩‍👧‍👦</span>
+                        Add Family Member
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="addFamilyForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="familyUsername" class="form-label" data-key="username">Username</label>
+                                <input type="text" id="familyUsername" class="form-input" required placeholder="Enter username">
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="loading hidden"></span>
+                                    <span data-key="sendInvite">Send Invite</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="familyMessage" class="mt-3"></div>
+                </div>
+            </div>
+
+            <!-- Pending Requests -->
+            <div class="card family-card">
+                <div class="card-header">
+                    <h3 class="card-title" data-key="pendingRequests">
+                        <span class="card-icon">⏳</span>
+                        Pending Requests
+                    </h3>
+                    <button id="refreshRequests" class="btn btn-sm btn-secondary">🔄 Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div id="pendingRequestsList">
+                        <div class="text-center text-secondary" data-key="noPendingRequests">No pending requests</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Family Members -->
+            <div class="card family-card">
+                <div class="card-header">
+                    <h3 class="card-title" data-key="familyMembers">
+                        <span class="card-icon">👥</span>
+                        Family Members
+                    </h3>
+                    <button id="refreshMembers" class="btn btn-sm btn-secondary">🔄 Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div id="familyMembersList">
+                        <div class="text-center text-secondary" data-key="noFamilyMembers">No family members yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Family Transactions -->
+        <div class="card family-transactions-card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="familyTransactions">
+                    <span class="card-icon">💰</span>
+                    Family Transactions
+                </h3>
+                <div class="form-group">
+                    <label for="familyMemberFilter" class="form-label sr-only">Filter by Member</label>
+                    <select id="familyMemberFilter" class="form-select" title="Filter transactions by family member">
+                        <option value="all">All Members</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th data-key="member">Member</th>
+                                <th data-key="date">Date</th>
+                                <th data-key="type">Type</th>
+                                <th data-key="category">Category</th>
+                                <th data-key="amount">Amount</th>
+                                <th data-key="note">Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="familyTransactionsTable">
+                            <tr>
+                                <td colspan="6" class="text-center text-secondary" data-key="noTransactions">No transactions found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Family Request Modal -->
+    <div id="requestModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-key="familyRequest">Family Request</h3>
+                <button class="modal-close" id="closeRequestModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="requestDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="rejectRequest">Reject</button>
+                <button type="button" class="btn btn-success" id="acceptRequest">Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/theme-init.js"></script>
+    <script src="firebase-config.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script src="js/theme-init.js"></script>
+    <script src="firebase-config.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    
+    <!-- Load scripts with fallback for file:// protocol -->
+    <script>
+        // Detect if we're using file:// protocol
+        const isFileProtocol = window.location.protocol === 'file:';
+        
+        if (isFileProtocol) {
+            // Load scripts directly for file:// protocol
+            const scripts = [
+                'js/utils.js',
+                'js/i18n.js',
+                'js/family.js'
+            ];
+
+            let loadedScripts = 0;
+            const totalScripts = scripts.length;
+
+            function loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = () => {
+                        loadedScripts++;
+                        console.log(`✅ Loaded: ${src} (${loadedScripts}/${totalScripts})`);
+                        resolve();
+                    };
+                    script.onerror = () => {
+                        console.error(`❌ Failed to load: ${src}`);
+                        reject();
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+
+            // Load all scripts sequentially
+            Promise.all(scripts.map(loadScript)).then(() => {
+                console.log('✅ All scripts loaded for file:// protocol');
+                initializeApp();
+            }).catch(() => {
+                console.error('❌ Some scripts failed to load');
+                initializeApp(); // Try to initialize anyway
+            });
+        } else {
+            // Load scripts normally for http:// or https:// protocol
+            const script = document.createElement('script');
+            script.src = 'js/utils.js';
+            script.onload = () => {
+                const script2 = document.createElement('script');
+                script2.src = 'js/i18n.js';
+                script2.onload = () => {
+                    const script3 = document.createElement('script');
+                    script3.src = 'js/family.js';
+                    script3.onload = () => {
+                        initializeApp();
+                    };
+                    document.head.appendChild(script3);
+                };
+                document.head.appendChild(script2);
+            };
+            document.head.appendChild(script);
+        }
+        
+        function initializeApp() {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('🚀 Initializing CashBook Family Page...');
+                
+                // Initialize all functionality with proper error handling
+                try {
+                    if (typeof initThemeToggle === 'function') {
+                        initThemeToggle();
+                        console.log('✅ Theme toggle initialized');
+                    }
+                } catch (e) {
+                    console.error('❌ Theme toggle failed:', e);
+                }
+                
+                try {
+                    if (typeof initMobileMenu === 'function') {
+                        initMobileMenu();
+                        console.log('✅ Mobile menu initialized');
+                    }
+                } catch (e) {
+                    console.error('❌ Mobile menu failed:', e);
+                }
+                
+                try {
+                    if (typeof initLogout === 'function') {
+                        initLogout();
+                        console.log('✅ Logout initialized');
+                    }
+                } catch (e) {
+                    console.error('❌ Logout failed:', e);
+                }
+                
+                try {
+                    if (typeof initLanguageToggle === 'function') {
+                        initLanguageToggle();
+                        console.log('✅ Language toggle initialized');
+                    }
+                } catch (e) {
+                    console.error('❌ Language toggle failed:', e);
+                }
+                
+                try {
+                    if (typeof initLanguage === 'function') {
+                        initLanguage();
+                        console.log('✅ Language initialized');
+                    }
+                } catch (e) {
+                    console.error('❌ Language failed:', e);
+                }
+                
+                try {
+                    if (typeof initFamily === 'function') {
+                        initFamily();
+                        console.log('✅ Family functionality initialized');
+                    }
+                } catch (e) {
+                    console.error('❌ Family functionality failed:', e);
+                }
+                
+                // Enhanced mobile/desktop responsive behavior
+                function handleResponsiveLayout() {
+                    const mobileMenuButton = document.getElementById('mobileMenuButton');
+                    const desktopActions = document.getElementById('desktopActions');
+                    const isMobile = window.innerWidth <= 768;
+                    
+                    if (isMobile) {
+                        // Mobile view
+                        if (mobileMenuButton) {
+                            mobileMenuButton.style.display = 'flex';
+                            mobileMenuButton.style.visibility = 'visible';
+                        }
+                        if (desktopActions) {
+                            desktopActions.style.display = 'none';
+                            desktopActions.style.visibility = 'hidden';
+                        }
+                    } else {
+                        // Desktop view
+                        if (mobileMenuButton) {
+                            mobileMenuButton.style.display = 'none';
+                            mobileMenuButton.style.visibility = 'hidden';
+                        }
+                        if (desktopActions) {
+                            desktopActions.style.display = 'flex';
+                            desktopActions.style.visibility = 'visible';
+                        }
+                    }
+                }
+                
+                // Apply responsive layout immediately and on resize
+                handleResponsiveLayout();
+                window.addEventListener('resize', handleResponsiveLayout);
+                
+                // Initialize theme immediately if possible
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                
+                // Basic theme toggle fallback
+                const themeToggleElements = document.querySelectorAll('#themeToggle, #mobileThemeToggle');
+                themeToggleElements.forEach(toggle => {
+                    toggle.addEventListener('click', () => {
+                        const currentTheme = document.documentElement.getAttribute('data-theme');
+                        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                        document.documentElement.setAttribute('data-theme', newTheme);
+                        localStorage.setItem('theme', newTheme);
+                        
+                        // Update switch visuals
+                        const switches = document.querySelectorAll('.theme-toggle-switch');
+                        switches.forEach(switchEl => {
+                            if (newTheme === 'dark') {
+                                switchEl.classList.add('active');
+                            } else {
+                                switchEl.classList.remove('active');
+                            }
+                        });
+                    });
+                });
+                
+                console.log('✅ CashBook Family Page initialized successfully!');
+            });
+        }
+    </script>
+</body>
+</html>

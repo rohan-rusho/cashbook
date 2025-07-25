@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - CashBook</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#1e88e5">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Enhanced jsPDF loading with Bengali support
+        window.addEventListener('load', function() {
+            console.log('Checking jsPDF availability with Bengali support...');
+            
+            if (typeof window.jsPDF !== 'undefined') {
+                console.log('jsPDF loaded successfully');
+                
+                // Test different Taka representations
+                const takaTests = [
+                ];
+                
+                console.log('Available Taka formats:');
+                takaTests.forEach((format, index) => {
+                    console.log(`${index + 1}. ${format}`);
+                });
+                
+            } else {
+                console.warn('jsPDF not found, loading fallback...');
+                var script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                document.head.appendChild(script);
+            }
+        });
+        
+        // Enhanced currency formatting with Bengali support
+        window.formatCurrency = function(amount, showSymbol = true) {
+            if (showSymbol) {
+                return `Tk. ${amount.toFixed(2)}`;
+            }
+            return amount.toFixed(2);
+        };
+        
+        // Alternative Bengali Taka rendering function
+        window.renderBengaliTaka = function(doc, x, y, amount, color = [0, 0, 0]) {
+            try {
+                // Try to render Bengali Taka symbol
+                doc.setTextColor(color[0], color[1], color[2]);
+                
+                // Method 1: Direct Unicode
+                try {
+                    return true;
+                } catch (e) {
+                    console.log('Method 1 failed:', e);
+                }
+                
+                // Method 2: Unicode escape
+                try {
+                    return true;
+                } catch (e) {
+                    console.log('Method 2 failed:', e);
+                }
+                
+                // Method 3: Fallback to Tk.
+                doc.text('Tk. ' + amount.toFixed(2), x, y);
+                return true;
+                
+            } catch (e) {
+                console.error('All currency rendering methods failed:', e);
+                doc.text(amount.toFixed(2), x, y);
+                return false;
+            }
+        };
+    </script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            background: transparent;
+        }
+        
+        .chart-container canvas {
+            max-height: 300px;
+            background: transparent;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1rem;
+        }
+        
+        .category-card {
+            transition: transform 0.2s ease;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .custom-date-range {
+            display: none;
+        }
+        
+        .summary-icon {
+            font-size: 2rem;
+        }
+        
+        .transaction-filter-group {
+            margin: 0;
+            width: 200px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .table th {
+            position: sticky;
+            top: 0;
+            background: var(--card-bg);
+            z-index: 10;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .badge-success {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+        
+        .badge-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #ef4444;
+            margin: 1rem 0;
+        }
+        
+        .success-message {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #22c55e;
+            margin: 1rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+            
+            .table {
+                font-size: 0.875rem;
+            }
+            
+            .category-card {
+                min-width: auto !important;
+                margin: 0.25rem !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .chart-container {
+                height: 200px;
+            }
+            
+            .card-body {
+                padding: 0.75rem;
+            }
+            
+            .table {
+                font-size: 0.75rem;
+            }
+            
+            .table th, .table td {
+                padding: 0.5rem 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="dash-header">
+        <div class="flex-between">
+            <div>
+                <h1 data-key="reports">Reports</h1>
+                <p class="text-secondary">Analyze your spending patterns</p>
+            </div>
+            <div class="flex-between">
+                <button id="mobileMenuButton" class="mobile-menu-button">☰</button>
+                <div class="flex" id="desktopActions">
+                    <button id="logoutHeaderBtn" class="btn btn-sm btn-error">🚪 Logout</button>
+                    <div class="theme-toggle" id="themeToggle">
+                        <span>🌙</span>
+                        <div class="theme-toggle-switch" id="themeSwitch"></div>
+                        <span>☀️</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="dash-nav">
+            <a href="dashboard.html" class="nav-link" data-key="dashboard">Dashboard</a>
+            <a href="report.html" class="nav-link active" data-key="reports">Reports</a>
+            <a href="family.html" class="nav-link" data-key="family">Family</a>
+            <a href="profile.html" class="nav-link" data-key="profile">Profile</a>
+        </nav>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <h3>Menu</h3>
+            <button class="mobile-menu-close" id="mobileMenuClose">×</button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <a href="dashboard.html" data-key="dashboard">📊 Dashboard</a>
+            <a href="report.html" class="active" data-key="reports">📈 Reports</a>
+            <a href="family.html" data-key="family">👨‍👩‍👧‍👦 Family</a>
+            <a href="profile.html" data-key="profile">👤 Profile</a>
+        </nav>
+        <div class="mobile-menu-actions">
+            <div class="theme-toggle" id="mobileThemeToggle">
+                <span>🌙</span>
+                <div class="theme-toggle-switch" id="mobileThemeSwitch"></div>
+                <span>☀️</span>
+            </div>
+            <button id="langToggle" class="lang-btn">🌐 English</button>
+            <button id="logoutBtn" class="btn btn-error" data-key="logout">Logout</button>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- Filter Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="filters">Filters</h3>
+                <button id="refreshReports" class="btn btn-sm btn-secondary">🔄</button>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="dateRange" class="form-label" data-key="dateRange">Date Range</label>
+                        <select id="dateRange" class="form-select">
+                            <option value="7days" selected>Last 7 Days</option>
+                            <option value="thisMonth">This Month</option>
+                            <option value="lastMonth">Last Month</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="form-group custom-date-range" id="customDateRange">
+                        <label class="form-label" data-key="customRange">Custom Range</label>
+                        <div class="flex">
+                            <input type="date" id="startDate" class="form-input">
+                            <input type="date" id="endDate" class="form-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button id="applyFilters" class="btn btn-primary">Apply Filters</button>
+                    <button id="exportCSV" class="btn btn-secondary">Export Excel</button>
+                    <button id="exportPDF" class="btn btn-secondary">Export PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="text-success summary-icon">📈</div>
+                    <h3 id="totalIncome" class="text-success">৳0.00</h3>
+                    <p class="text-secondary" data-key="totalIncome">Total Income</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="text-error summary-icon">📉</div>
+                    <h3 id="totalExpenses" class="text-error">৳0.00</h3>
+                    <p class="text-secondary" data-key="totalExpenses">Total Expenses</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="text-primary summary-icon">💰</div>
+                    <h3 id="netSavings" class="text-primary">৳0.00</h3>
+                    <p class="text-secondary" data-key="netSavings">Net Savings</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Categories -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="topCategories">Top 3 Categories</h3>
+            </div>
+            <div class="card-body">
+                <div id="topCategoriesList" class="flex flex-wrap">
+                    <div class="text-center text-secondary" data-key="noData">No data available</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" data-key="expensesByCategory">Expenses by Category</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" data-key="dailyTrends">Daily Trends</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Comparison -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="monthlyComparison">Monthly Comparison</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Transactions -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="detailedTransactions">Detailed Transactions</h3>
+                <div class="form-group transaction-filter-group">
+                    <select id="transactionFilter" class="form-select" title="Filter transactions by type">
+                        <option value="all">All Transactions</option>
+                        <option value="income">Income Only</option>
+                        <option value="expense">Expenses Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th data-key="date">Date</th>
+                                <th data-key="type">Type</th>
+                                <th data-key="category">Category</th>
+                                <th data-key="amount">Amount</th>
+                                <th data-key="note">Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTable">
+                            <tr>
+                                <td colspan="5" class="text-center text-secondary" data-key="noTransactions">No transactions found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Export libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <script src="js/theme-init.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="js/report.js"></script>
+    
+    <script>
+        // Initialize Firebase
+        let currentUser = null;
+        let auth, db, realtimeDB;
+        
+        function initFirebase() {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            auth = firebase.auth();
+            db = firebase.firestore();
+            realtimeDB = firebase.database();
+        }
+        
+        // Initialize theme toggle
+        function initThemeToggle() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeSwitch = document.getElementById('themeSwitch');
+            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+            const mobileThemeSwitch = document.getElementById('mobileThemeSwitch');
+            
+            function updateSwitches() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                if (currentTheme === 'dark') {
+                    themeSwitch?.classList.add('active');
+                    mobileThemeSwitch?.classList.add('active');
+                } else {
+                    themeSwitch?.classList.remove('active');
+                    mobileThemeSwitch?.classList.remove('active');
+                }
+            }
+            
+            updateSwitches();
+            
+            [themeToggle, mobileThemeToggle].forEach(toggle => {
+                if (toggle) {
+                    toggle.addEventListener('click', () => {
+                        const currentTheme = document.documentElement.getAttribute('data-theme');
+                        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                        document.documentElement.setAttribute('data-theme', newTheme);
+                        localStorage.setItem('theme', newTheme);
+                        updateSwitches();
+                    });
+                }
+            });
+        }
+        
+        // Initialize mobile menu
+        function initMobileMenu() {
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+            const mobileMenuClose = document.getElementById('mobileMenuClose');
+            
+            function openMobileMenu() {
+                mobileMenu.classList.add('active');
+                mobileMenuOverlay.classList.add('active');
+            }
+            
+            function closeMobileMenu() {
+                mobileMenu.classList.remove('active');
+                mobileMenuOverlay.classList.remove('active');
+            }
+            
+            mobileMenuButton?.addEventListener('click', openMobileMenu);
+            mobileMenuClose?.addEventListener('click', closeMobileMenu);
+            mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
+        }
+        
+        // Initialize logout
+        function initLogout() {
+            const logoutBtns = document.querySelectorAll('#logoutBtn, #logoutHeaderBtn');
+            logoutBtns.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    try {
+                        await auth.signOut();
+                        window.location.href = 'login.html';
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        alert('Logout failed. Please try again.');
+                    }
+                });
+            });
+        }
+        
+        // Mobile responsive function
+        function handleMobileDesktopActions() {
+            const desktopActions = document.getElementById('desktopActions');
+            const mobileMenuButton = document.querySelector('.mobile-menu-button');
+            
+            function checkScreenSize() {
+                const isMobile = window.innerWidth <= 768;
+                
+                if (desktopActions) {
+                    if (isMobile) {
+                        desktopActions.style.display = 'none';
+                        desktopActions.style.visibility = 'hidden';
+                        desktopActions.style.opacity = '0';
+                    } else {
+                        desktopActions.style.display = 'flex';
+                        desktopActions.style.visibility = 'visible';
+                        desktopActions.style.opacity = '1';
+                    }
+                }
+                
+                if (mobileMenuButton) {
+                    mobileMenuButton.style.display = 'block';
+                }
+            }
+            
+            checkScreenSize();
+            window.addEventListener('resize', checkScreenSize);
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 Initializing report page...');
+            
+            initFirebase();
+            initThemeToggle();
+            initMobileMenu();
+            initLogout();
+            handleMobileDesktopActions();
+            
+            // Make Firebase instances globally available for report.js
+            window.auth = auth;
+            window.db = db;
+            window.realtimeDB = realtimeDB;
+            window.currentUser = null;
+            
+            // Setup filter and range controls
+            const applyBtn = document.getElementById('applyFilters');
+            const refreshBtn = document.getElementById('refreshReports');
+            const rangeSelect = document.getElementById('dateRange');
+            const customDateRange = document.getElementById('customDateRange');
+
+            if (rangeSelect) {
+                rangeSelect.onchange = e => {
+                    const v = e.target.value;
+                    if (customDateRange) {
+                        customDateRange.style.display = v === 'custom' ? 'block' : 'none';
+                    }
+                };
+            }
+
+            // Set current user for report.js
+            auth.onAuthStateChanged(user => {
+                currentUser = user;
+                window.currentUser = user;
+                if (user) {
+                    console.log('👤 User authenticated:', user.uid);
+                    
+                    // Setup button event handlers after authentication
+                    if (applyBtn) {
+                        applyBtn.onclick = () => loadReport(user);
+                    }
+
+                    if (refreshBtn) {
+                        refreshBtn.onclick = () => loadReport(user);
+                    }
+                    
+                    // Load the report after authentication
+                    if (typeof loadReport === 'function') {
+                        loadReport(user);
+                    }
+                } else {
+                    console.log('❌ No user authenticated, redirecting to login');
+                    window.location.href = 'login.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

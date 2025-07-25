@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Rules Checker - CashBook</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .rules-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .test-card {
+            background: var(--card);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--primary);
+        }
+        .status {
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .test-log {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        [data-theme="dark"] .test-log {
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="rules-container">
+        <h1>🔐 Firebase Rules Checker</h1>
+        
+        <div class="test-card">
+            <h2>Authentication Status</h2>
+            <div id="authStatus" class="status warning">Checking authentication...</div>
+        </div>
+        
+        <div class="test-card">
+            <h2>Database Connection Tests</h2>
+            <div id="firestoreStatus" class="status warning">Testing Firestore connection...</div>
+            <div id="realtimeStatus" class="status warning">Testing Realtime Database connection...</div>
+        </div>
+        
+        <div class="test-card">
+            <h2>Permission Tests</h2>
+            <button id="testPermissions" class="btn btn-primary">🧪 Test All Permissions</button>
+            <div id="permissionResults"></div>
+        </div>
+        
+        <div class="test-card">
+            <h2>Quick Fix Actions</h2>
+            <button id="checkRules" class="btn btn-secondary">📋 Check Current Rules</button>
+            <button id="suggestFix" class="btn btn-warning">🔧 Suggest Fix</button>
+            <div id="fixSuggestions"></div>
+        </div>
+        
+        <div class="test-card">
+            <h2>Test Log</h2>
+            <button onclick="clearLog()" class="btn btn-sm btn-secondary">Clear Log</button>
+            <div id="testLog" class="test-log"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let logMessages = [];
+        let auth, db, realtimeDB;
+        let currentUser = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `[${timestamp}] ${message}`;
+            logMessages.push(entry);
+            document.getElementById('testLog').textContent = logMessages.join('\n');
+            document.getElementById('testLog').scrollTop = document.getElementById('testLog').scrollHeight;
+            console.log(entry);
+        }
+
+        function clearLog() {
+            logMessages = [];
+            document.getElementById('testLog').textContent = '';
+        }
+
+        function setStatus(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+
+        async function initFirebase() {
+            try {
+                log('🔥 Initializing Firebase...');
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                realtimeDB = firebase.database();
+                
+                log('✅ Firebase initialized successfully');
+                
+                // Test connections
+                await testConnections();
+                
+            } catch (error) {
+                log('❌ Firebase initialization failed: ' + error.message);
+                throw error;
+            }
+        }
+
+        async function testConnections() {
+            try {
+                // Test Firestore connection
+                log('📊 Testing Firestore connection...');
+                await db.collection('test').limit(1).get();
+                setStatus('firestoreStatus', 'success', '✅ Firestore connection OK');
+                log('✅ Firestore connection successful');
+                
+                // Test Realtime Database connection
+                log('📊 Testing Realtime Database connection...');
+                await realtimeDB.ref('test').once('value');
+                setStatus('realtimeStatus', 'success', '✅ Realtime Database connection OK');
+                log('✅ Realtime Database connection successful');
+                
+            } catch (error) {
+                log('❌ Connection test failed: ' + error.message);
+                if (error.code === 'permission-denied') {
+                    setStatus('firestoreStatus', 'error', '❌ Permission denied');
+                    setStatus('realtimeStatus', 'error', '❌ Permission denied');
+                } else {
+                    setStatus('firestoreStatus', 'error', '❌ Connection failed');
+                    setStatus('realtimeStatus', 'error', '❌ Connection failed');
+                }
+            }
+        }
+
+        async function testPermissions() {
+            const resultsDiv = document.getElementById('permissionResults');
+            resultsDiv.innerHTML = '<div class="status info">Running permission tests...</div>';
+            
+            if (!currentUser) {
+                resultsDiv.innerHTML = '<div class="status error">❌ No user authenticated</div>';
+                return;
+            }
+
+            const tests = [
+                { name: 'Firestore Read', test: () => db.collection('transactions').limit(1).get() },
+                { name: 'Firestore Write', test: () => db.collection('transactions').add({ test: true, userId: currentUser.uid }) },
+                { name: 'Realtime DB Read', test: () => realtimeDB.ref(`users/${currentUser.uid}/balance`).once('value') },
+                { name: 'Realtime DB Write', test: () => realtimeDB.ref(`users/${currentUser.uid}/balance`).set(0) }
+            ];
+
+            let results = '';
+            
+            for (const test of tests) {
+                try {
+                    log(`🧪 Testing ${test.name}...`);
+                    await test.test();
+                    results += `<div class="status success">✅ ${test.name}: OK</div>`;
+                    log(`✅ ${test.name}: PASSED`);
+                } catch (error) {
+                    results += `<div class="status error">❌ ${test.name}: ${error.code || error.message}</div>`;
+                    log(`❌ ${test.name}: FAILED - ${error.message}`);
+                }
+            }
+            
+            resultsDiv.innerHTML = results;
+        }
+
+        function suggestFix() {
+            const fixDiv = document.getElementById('fixSuggestions');
+            fixDiv.innerHTML = `
+                <div class="status info">
+                    <h3>🔧 Suggested Fixes:</h3>
+                    <ol>
+                        <li><strong>Update Firestore Rules:</strong> Make sure your Firestore rules allow authenticated users to read/write transactions</li>
+                        <li><strong>Update Realtime Database Rules:</strong> Ensure users can read/write their own balance data</li>
+                        <li><strong>Check Authentication:</strong> Verify you're properly logged in</li>
+                        <li><strong>Apply Fixed Rules:</strong> Use the rules from <code>firestore-rules-fixed.txt</code></li>
+                    </ol>
+                    <br>
+                    <p><strong>Quick Fix:</strong> Copy the rules from <code>firestore-rules-fixed.txt</code> to your Firebase Console → Firestore Database → Rules</p>
+                </div>
+            `;
+            
+            log('💡 Fix suggestions displayed');
+        }
+
+        function checkRules() {
+            const fixDiv = document.getElementById('fixSuggestions');
+            fixDiv.innerHTML = `
+                <div class="status warning">
+                    <h3>📋 Current Rules Check:</h3>
+                    <p>Your current Firestore rules should allow:</p>
+                    <ul>
+                        <li>✅ Authenticated users to read/write any collection</li>
+                        <li>✅ Access to 'transactions' collection</li>
+                        <li>✅ Access to 'users' collection</li>
+                        <li>✅ Test collection for debugging</li>
+                    </ul>
+                    <p>If you're still getting errors, your rules might be restrictive. Apply the fixed rules from <code>firestore-rules-fixed.txt</code></p>
+                </div>
+            `;
+            
+            log('📋 Rules check completed');
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', async () => {
+            log('🚀 Rules checker starting...');
+            
+            // Initialize theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            try {
+                await initFirebase();
+                
+                // Check authentication
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        currentUser = user;
+                        setStatus('authStatus', 'success', '✅ Authenticated: ' + user.email);
+                        log('✅ User authenticated: ' + user.email);
+                    } else {
+                        setStatus('authStatus', 'error', '❌ Not authenticated');
+                        log('❌ No user authenticated');
+                    }
+                });
+                
+                // Set up event listeners
+                document.getElementById('testPermissions').addEventListener('click', testPermissions);
+                document.getElementById('checkRules').addEventListener('click', checkRules);
+                document.getElementById('suggestFix').addEventListener('click', suggestFix);
+                
+            } catch (error) {
+                log('❌ Initialization failed: ' + error.message);
+            }
+            
+            log('✅ Rules checker initialized');
+        });
+    </script>
+</body>
+</html>

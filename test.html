@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashBook - Test Page</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>CashBook Test Page</h1>
+        <p>This is a test page to verify the fixes work correctly.</p>
+        
+        <h2>✅ Fixes Applied:</h2>
+        <ul>
+            <li><strong>Google Profile Photos:</strong> Updated auth.js to save Google profile photos to Firestore</li>
+            <li><strong>Dark Mode Cross-Page:</strong> Moved theme functions to utils.js for shared use</li>
+            <li><strong>Mobile Menu:</strong> Added mobile menu to all pages (report.html, family.html, profile.html)</li>
+            <li><strong>Firebase SDK:</strong> Added Firebase v9 compatibility scripts to all pages</li>
+            <li><strong>Theme Persistence:</strong> Theme now persists across all pages using localStorage</li>
+        </ul>
+        
+        <h2>🔧 Testing Instructions:</h2>
+        <ol>
+            <li>Start the server with: <code>start-server.bat</code></li>
+            <li>Open <code>http://localhost:8000</code> in your browser</li>
+            <li>Sign up with Google - your profile photo should appear</li>
+            <li>Test dark mode toggle - should persist across pages</li>
+            <li>Test mobile menu on all pages (dashboard, reports, family, profile)</li>
+            <li>Test all buttons and functionality</li>
+        </ol>
+        
+        <h2>📋 Summary of Changes:</h2>
+        <ul>
+            <li><strong>auth.js:</strong> Fixed Google signup/login to save profile photos</li>
+            <li><strong>utils.js:</strong> Added shared functions for theme, mobile menu, logout, language</li>
+            <li><strong>dashboard.js:</strong> Removed duplicate functions, now uses shared utils</li>
+            <li><strong>profile.js:</strong> Updated to use correct profilePicture field</li>
+            <li><strong>*.html:</strong> Updated all pages with mobile menu structure and Firebase SDK</li>
+        </ul>
+        
+        <p><strong>Currency:</strong> Bangladeshi Taka (৳) is set as default</p>
+        <p><strong>Authentication:</strong> Google OAuth now properly authorized for localhost</p>
+    </div>
+</body>
+</html>

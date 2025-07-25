@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - CashBook</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#1e88e5">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="dash-header">
+        <div class="flex-between">
+            <div>
+                <h1 data-key="profile">Profile & Settings</h1>
+                <p class="text-secondary">Manage your account and preferences</p>
+            </div>
+            <div class="flex-between">
+                <button id="mobileMenuButton" class="mobile-menu-button">☰</button>
+                <div class="flex" id="desktopActions">
+                    <button id="logoutHeaderBtn" class="btn btn-sm btn-error">🚪 Logout</button>
+                    <div class="theme-toggle" id="themeToggle">
+                        <span>🌙</span>
+                        <div class="theme-toggle-switch" id="themeSwitch"></div>
+                        <span>☀️</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="dash-nav">
+            <a href="dashboard.html" class="nav-link" data-key="dashboard">Dashboard</a>
+            <a href="report.html" class="nav-link" data-key="reports">Reports</a>
+            <a href="family.html" class="nav-link" data-key="family">Family</a>
+            <a href="profile.html" class="nav-link active" data-key="profile">Profile</a>
+        </nav>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <h3>Menu</h3>
+            <button class="mobile-menu-close" id="mobileMenuClose">×</button>
+        </div>
+        <nav class="mobile-menu-nav">
+            <a href="dashboard.html" data-key="dashboard">📊 Dashboard</a>
+            <a href="report.html" data-key="reports">📈 Reports</a>
+            <a href="family.html" data-key="family">👨‍👩‍👧‍👦 Family</a>
+            <a href="profile.html" class="active" data-key="profile">👤 Profile</a>
+        </nav>
+        <div class="mobile-menu-actions">
+            <div class="theme-toggle" id="mobileThemeToggle">
+                <span>🌙</span>
+                <div class="theme-toggle-switch" id="mobileThemeSwitch"></div>
+                <span>☀️</span>
+            </div>
+            <button id="langToggle" class="lang-btn">🌐 English</button>
+            <button id="logoutBtn" class="btn btn-error" data-key="logout">Logout</button>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- Profile Information -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="profileInfo">Profile Information</h3>
+                <button id="editProfile" class="btn btn-sm btn-secondary">✏️ Edit</button>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-2">
+                    <div class="text-center">
+                        <div class="profile-avatar" id="profileAvatar">
+                            <img src="assets/profile_pics/default.png" alt="Profile Picture" id="profilePic">
+                        </div>
+                        <button id="changeProfilePic" class="btn btn-sm btn-secondary mt-2">Change Picture</button>
+                        <input type="file" id="profilePicInput" accept="image/*" style="display: none;">
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label" data-key="fullName">Full Name</label>
+                            <div class="profile-field" id="displayName">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-key="username">Username</label>
+                            <div class="profile-field" id="displayUsername">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-key="email">Email</label>
+                            <div class="profile-field" id="displayEmail">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-key="mobile">Mobile</label>
+                            <div class="profile-field" id="displayMobile">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weekly Summary -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="weeklyOverview">Weekly Overview</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-2">
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                    <div>
+                        <div class="mb-3">
+                            <h4 class="text-success" id="weeklyIncome">₹0.00</h4>
+                            <p class="text-secondary" data-key="weeklyIncome">Weekly Income</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="text-error" id="weeklyExpenses">₹0.00</h4>
+                            <p class="text-secondary" data-key="weeklyExpenses">Weekly Expenses</p>
+                        </div>
+                        <div class="mb-3">
+                            <h4 class="text-primary" id="weeklySavings">₹0.00</h4>
+                            <p class="text-secondary" data-key="weeklySavings">Weekly Savings</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="settings">Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="emailNotifications">
+                        <label for="emailNotifications" data-key="emailNotifications">Enable weekly recap emails</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="smartSuggestions">
+                        <label for="smartSuggestions" data-key="smartSuggestions">Enable smart spending suggestions</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="currency" class="form-label" data-key="currency">Currency</label>
+                    <select id="currency" class="form-select">
+                        <option value="BDT">৳ Bangladeshi Taka</option>
+                        <option value="INR">₹ Indian Rupee</option>
+                        <option value="USD">$ US Dollar</option>
+                        <option value="EUR">€ Euro</option>
+                        <option value="GBP">£ British Pound</option>
+                        <option value="JPY">¥ Japanese Yen</option>
+                        <option value="CNY">¥ Chinese Yuan</option>
+                        <option value="KRW">₩ South Korean Won</option>
+                        <option value="SGD">S$ Singapore Dollar</option>
+                        <option value="MYR">RM Malaysian Ringgit</option>
+                        <option value="THB">฿ Thai Baht</option>
+                        <option value="PKR">Rs Pakistani Rupee</option>
+                        <option value="LKR">Rs Sri Lankan Rupee</option>
+                        <option value="NPR">Rs Nepalese Rupee</option>
+                        <option value="AFN">Af Afghan Afghani</option>
+                    </select>
+                </div>
+                <button id="saveSettings" class="btn btn-primary">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Export Center -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="exportCenter">Export Center</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-2">
+                    <div>
+                        <h4 data-key="exportData">Export Data</h4>
+                        <p class="text-secondary" data-key="exportDataDesc">Download your transaction data</p>
+                        <div class="btn-group">
+                            <button id="exportAllCSV" class="btn btn-secondary">📄 Export CSV</button>
+                            <button id="exportAllPDF" class="btn btn-secondary">📋 Export PDF</button>
+                            <button id="exportJSON" class="btn btn-secondary">📦 Export JSON</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 data-key="dataBackup">Data Backup</h4>
+                        <p class="text-secondary" data-key="dataBackupDesc">Create a complete backup of your data</p>
+                        <button id="createBackup" class="btn btn-primary">💾 Create Backup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" data-key="security">Security</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <button id="changePassword" class="btn btn-warning">🔒 Change Password</button>
+                </div>
+                <div class="form-group">
+                    <button id="logoutMainBtn" class="btn btn-primary">🚪 Logout</button>
+                </div>
+                <div class="form-group">
+                    <button id="deleteAccount" class="btn btn-error">🗑️ Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-key="editProfile">Edit Profile</h3>
+                <button class="modal-close" id="closeEditModal">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label for="editName" class="form-label" data-key="fullName">Full Name</label>
+                        <input type="text" id="editName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUsername" class="form-label" data-key="username">Username</label>
+                        <input type="text" id="editUsername" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMobile" class="form-label" data-key="mobile">Mobile</label>
+                        <input type="tel" id="editMobile" class="form-input" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+                <button type="submit" form="editProfileForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-key="changePassword">Change Password</h3>
+                <button class="modal-close" id="closePasswordModal2">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword" class="form-label" data-key="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword" class="form-label" data-key="newPassword">New Password</label>
+                        <input type="password" id="newPassword" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmNewPassword" class="form-label" data-key="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmNewPassword" class="form-input" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelPassword">Cancel</button>
+                <button type="submit" form="changePasswordForm" class="btn btn-warning">Change Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+    <script src="js/theme-init.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script type="module">
+        import { initThemeToggle, initMobileMenu, initLogout, initLanguageToggle } from './js/utils.js';
+        import { initLanguage } from './js/i18n.js';
+        import { initProfile } from './js/profile.js';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initThemeToggle();
+            initMobileMenu();
+            initLogout();
+            initLanguageToggle();
+            initLanguage();
+            initProfile();
+        });
+    </script>
+</body>
+</html>

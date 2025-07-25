@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password - CashBook</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <meta name="theme-color" content="#1e88e5">
+</head>
+<body>
+    <main class="center">
+        <div class="auth-container">
+            <div class="text-center mb-4">
+                <div class="logo-icon">💰</div>
+                <h1>Reset Password</h1>
+                <p class="text-secondary">Enter your email to receive a reset link</p>
+            </div>
+
+            <form id="forgotForm">
+                <div class="form-group">
+                    <label for="email" class="form-label" data-key="email">Email</label>
+                    <input type="email" id="email" class="form-input" required>
+                </div>
+
+                <div id="errorMsg" class="alert alert-error hidden"></div>
+                <div id="successMsg" class="alert alert-success hidden"></div>
+
+                <button type="submit" class="btn btn-primary btn-full" data-key="sendResetLink">
+                    <span class="loading hidden"></span>
+                    Send Reset Link
+                </button>
+            </form>
+
+            <div class="text-center mt-3">
+                <a href="login.html" class="text-primary" data-key="backToLogin">← Back to Login</a>
+            </div>
+
+            <div class="text-center mt-3">
+                <p class="text-secondary">Remember your password? 
+                    <a href="login.html" class="text-primary" data-key="login">Login</a>
+                </p>
+            </div>
+
+            <div class="text-center mt-3">
+                <button id="langToggle" class="lang-btn">
+                    <span>🌐</span>
+                    <span data-key="english">English</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="firebase-config.js"></script>
+    <script type="module">
+        import { initLanguage } from './js/i18n.js';
+        import { initForgot } from './js/auth.js';
+        import { initLanguageToggle } from './js/utils.js';
+        
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            initLanguage();
+            initLanguageToggle();
+            initForgot();
+        });
+    </script>
+</body>
+</html>

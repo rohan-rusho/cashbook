@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .danger:hover {
+            background: #c82333;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Simple Login Test</h1>
+        
+        <div id="authStatus" class="status info">Checking authentication...</div>
+        
+        <div style="margin: 20px 0;">
+            <input type="text" id="emailInput" placeholder="Email or Username">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button onclick="testLogin()">Test Login</button>
+            <button onclick="testLogout()" class="danger">Test Logout</button>
+            <button onclick="clearAll()" class="danger">Clear All Data</button>
+        </div>
+        
+        <div id="result" class="status info" style="display: none;">Ready to test</div>
+        
+        <div>
+            <h3>Debug Log:</h3>
+            <button onclick="clearLog()" style="background: #6c757d;">Clear Log</button>
+            <div id="debugLog" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let auth, db, realtimeDB;
+        let debugLog = [];
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            debugLog.push(logEntry);
+            
+            const logElement = document.getElementById('debugLog');
+            logElement.textContent = debugLog.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function clearLog() {
+            debugLog = [];
+            document.getElementById('debugLog').textContent = '';
+        }
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('authStatus');
+            statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            resultDiv.style.display = 'block';
+        }
+        
+        // Initialize Firebase
+        function initFirebase() {
+            try {
+                addLog('Initializing Firebase...');
+                
+                if (typeof firebase === 'undefined') {
+                    addLog('ERROR: Firebase SDK not loaded');
+                    return false;
+                }
+                
+                if (typeof firebaseConfig === 'undefined') {
+                    addLog('ERROR: Firebase config not found');
+                    return false;
+                }
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    addLog('Firebase app initialized');
+                } else {
+                    addLog('Firebase app already initialized');
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                realtimeDB = firebase.database();
+                
+                // Set persistence
+                auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                    .then(() => {
+                        addLog('Firebase Auth persistence set to LOCAL');
+                    })
+                    .catch((error) => {
+                        addLog(`Error setting Firebase Auth persistence: ${error.message}`);
+                    });
+                
+                addLog('Firebase services initialized successfully');
+                return true;
+                
+            } catch (error) {
+                addLog(`Firebase initialization error: ${error.message}`);
+                return false;
+            }
+        }
+        
+        function checkAuthState() {
+            const user = auth.currentUser;
+            if (user) {
+                showStatus(`✅ User logged in: ${user.email} (Verified: ${user.emailVerified})`, 'success');
+                addLog(`Auth state: User logged in - ${user.email}`);
+            } else {
+                showStatus('❌ No user logged in', 'error');
+                addLog('Auth state: No user logged in');
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            
+            if (!email || !password) {
+                showResult('Please enter both email and password', 'error');
+                return;
+            }
+            
+            addLog(`Testing login with: ${email}`);
+            showResult('🔄 Testing login...', 'info');
+            
+            try {
+                let loginEmail = email;
+                
+                // Check if input is username
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    addLog('Input appears to be username, looking up email...');
+                    
+                    const usernameQuery = await db.collection('users').where('username', '==', email).limit(1).get();
+                    
+                    if (usernameQuery.empty) {
+                        showResult('❌ Username not found', 'error');
+                        addLog('Username not found in database');
+                        return;
+                    }
+                    
+                    const userData = usernameQuery.docs[0].data();
+                    loginEmail = userData.email;
+                    addLog(`Found email for username: ${loginEmail}`);
+                }
+                
+                // Clear any existing auth state
+                addLog('Clearing any existing auth state...');
+                if (auth.currentUser) {
+                    await auth.signOut();
+                    addLog('Signed out previous user');
+                }
+                
+                // Wait a moment for auth state to clear
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Attempt login
+                addLog(`Attempting login with email: ${loginEmail}`);
+                const userCredential = await auth.signInWithEmailAndPassword(loginEmail, password);
+                const user = userCredential.user;
+                
+                addLog(`Login successful: ${user.email}`);
+                
+                // Refresh user to get latest email verification status
+                await user.reload();
+                addLog(`User reloaded, emailVerified: ${user.emailVerified}`);
+                
+                if (!user.emailVerified) {
+                    showResult('⚠️ Login successful but email not verified', 'error');
+                    addLog('Email not verified, signing out...');
+                    await auth.signOut();
+                    return;
+                }
+                
+                showResult('✅ Login successful and email verified!', 'success');
+                addLog('Login test completed successfully');
+                
+                // Update auth state display
+                setTimeout(checkAuthState, 500);
+                
+            } catch (error) {
+                showResult(`❌ Login failed: ${error.message}`, 'error');
+                addLog(`Login failed: ${error.code} - ${error.message}`);
+                
+                // Show detailed error information
+                addLog(`Error details: ${JSON.stringify({
+                    code: error.code,
+                    message: error.message,
+                    credential: error.credential,
+                    email: error.email
+                })}`);
+            }
+        }
+        
+        async function testLogout() {
+            addLog('Testing logout...');
+            showResult('🔄 Testing logout...', 'info');
+            
+            try {
+                // Clear all data
+                localStorage.clear();
+                sessionStorage.clear();
+                addLog('Cleared all local storage');
+                
+                // Sign out
+                await auth.signOut();
+                addLog('Firebase signOut completed');
+                
+                // Wait for auth state to update
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                showResult('✅ Logout successful', 'success');
+                addLog('Logout test completed successfully');
+                
+                // Update auth state display
+                checkAuthState();
+                
+            } catch (error) {
+                showResult(`❌ Logout failed: ${error.message}`, 'error');
+                addLog(`Logout failed: ${error.message}`);
+            }
+        }
+        
+        function clearAll() {
+            localStorage.clear();
+            sessionStorage.clear();
+            addLog('All local data cleared');
+            showResult('All local data cleared', 'info');
+            
+            // Force refresh auth state
+            setTimeout(checkAuthState, 500);
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            addLog('Page loaded');
+            
+            if (initFirebase()) {
+                // Listen for auth state changes
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        addLog(`Auth state changed: User logged in (${user.email})`);
+                    } else {
+                        addLog('Auth state changed: User logged out');
+                    }
+                    checkAuthState();
+                });
+            } else {
+                showStatus('❌ Firebase initialization failed', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

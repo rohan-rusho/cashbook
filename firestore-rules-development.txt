@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // TEMPORARY RULES FOR DEVELOPMENT/TESTING
+    // Allow all authenticated users to read/write (for testing)
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow unauthenticated access to test collection for debugging
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// Note: These are permissive rules for development/testing only
+// Use firestore-rules.txt for production with proper security

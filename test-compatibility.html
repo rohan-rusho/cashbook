@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashBook - Compatibility Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            background: var(--background);
+        }
+        
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status.success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .status.error {
+            background: var(--error);
+            color: white;
+        }
+        
+        .theme-controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--primary-light);
+            color: white;
+        }
+        
+        .theme-toggle-switch {
+            width: 40px;
+            height: 20px;
+            background: var(--border);
+            border-radius: 10px;
+            position: relative;
+            transition: var(--transition);
+        }
+        
+        .theme-toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 1px;
+            left: 1px;
+            transition: var(--transition);
+        }
+        
+        .theme-toggle-switch.active {
+            background: var(--primary);
+        }
+        
+        .theme-toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>CashBook Compatibility Test</h1>
+        <p>This page tests if CashBook works properly with both file:// and http:// protocols.</p>
+        
+        <div class="theme-controls">
+            <div class="theme-toggle" id="themeToggle">
+                <span>🌙</span>
+                <div class="theme-toggle-switch" id="themeSwitch"></div>
+                <span>☀️</span>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <strong>CSS Variables:</strong>
+            <span id="cssTest" class="status">Testing...</span>
+            <div>Background color should change with theme</div>
+        </div>
+        
+        <div class="test-item">
+            <strong>JavaScript Functions:</strong>
+            <span id="jsTest" class="status">Testing...</span>
+            <div>Theme toggle should work</div>
+        </div>
+        
+        <div class="test-item">
+            <strong>Local Storage:</strong>
+            <span id="storageTest" class="status">Testing...</span>
+            <div>Theme preference should persist</div>
+        </div>
+        
+        <div class="test-item">
+            <strong>Current Access Method:</strong>
+            <span id="protocolTest" class="status">Checking...</span>
+            <div id="protocolInfo"></div>
+        </div>
+        
+        <div class="test-item">
+            <strong>Recommended Actions:</strong>
+            <div id="recommendations"></div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Test CSS Variables
+            const cssTest = document.getElementById('cssTest');
+            const computedStyle = getComputedStyle(document.documentElement);
+            const bgColor = computedStyle.getPropertyValue('--background');
+            
+            if (bgColor && bgColor.trim()) {
+                cssTest.textContent = 'Working';
+                cssTest.className = 'status success';
+            } else {
+                cssTest.textContent = 'Failed';
+                cssTest.className = 'status error';
+            }
+            
+            // Test JavaScript Functions
+            const jsTest = document.getElementById('jsTest');
+            if (typeof initThemeToggle === 'function') {
+                jsTest.textContent = 'Working';
+                jsTest.className = 'status success';
+                initThemeToggle();
+            } else {
+                jsTest.textContent = 'Failed';
+                jsTest.className = 'status error';
+            }
+            
+            // Test Local Storage
+            const storageTest = document.getElementById('storageTest');
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                storageTest.textContent = 'Working';
+                storageTest.className = 'status success';
+            } catch (e) {
+                storageTest.textContent = 'Failed';
+                storageTest.className = 'status error';
+            }
+            
+            // Check Protocol
+            const protocolTest = document.getElementById('protocolTest');
+            const protocolInfo = document.getElementById('protocolInfo');
+            const recommendations = document.getElementById('recommendations');
+            
+            const protocol = window.location.protocol;
+            const isFile = protocol === 'file:';
+            const isHttp = protocol.startsWith('http');
+            
+            if (isFile) {
+                protocolTest.textContent = 'File Protocol';
+                protocolTest.className = 'status error';
+                protocolInfo.innerHTML = `
+                    <strong>Current:</strong> ${window.location.href}<br>
+                    <strong>Protocol:</strong> ${protocol}
+                `;
+                recommendations.innerHTML = `
+                    <strong>⚠️ Warning:</strong> You're using file:// protocol which has limitations.<br>
+                    <strong>✅ Recommended:</strong> Use the local server instead:<br>
+                    <ol>
+                        <li>Double-click <code>start-server.bat</code> in the CashBook folder</li>
+                        <li>Access via <code>http://localhost:8000</code></li>
+                        <li>All features will work properly</li>
+                    </ol>
+                `;
+            } else if (isHttp) {
+                protocolTest.textContent = 'HTTP Protocol';
+                protocolTest.className = 'status success';
+                protocolInfo.innerHTML = `
+                    <strong>Current:</strong> ${window.location.href}<br>
+                    <strong>Protocol:</strong> ${protocol}
+                `;
+                recommendations.innerHTML = `
+                    <strong>✅ Perfect:</strong> You're using HTTP protocol - all features work properly!
+                `;
+            } else {
+                protocolTest.textContent = 'Unknown Protocol';
+                protocolTest.className = 'status error';
+                protocolInfo.innerHTML = `
+                    <strong>Current:</strong> ${window.location.href}<br>
+                    <strong>Protocol:</strong> ${protocol}
+                `;
+                recommendations.innerHTML = `
+                    <strong>⚠️ Unknown protocol detected.</strong> Please use the HTTP server for best results.
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

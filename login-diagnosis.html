@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Issue Diagnosis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .step-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Login Issue Diagnosis</h1>
+        
+        <div class="step">
+            <h3>Step 1: Test Credentials</h3>
+            <input type="text" id="testEmail" placeholder="Email or Username" value="">
+            <input type="password" id="testPassword" placeholder="Password" value="">
+            <button onclick="runDiagnosis()">🔍 Run Full Diagnosis</button>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Firebase Connection</h3>
+            <div id="firebaseStatus" class="step-result info">Checking Firebase connection...</div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Auth State</h3>
+            <div id="authStatus" class="step-result info">Checking authentication state...</div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Database Connection</h3>
+            <div id="databaseStatus" class="step-result info">Checking database connection...</div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 5: Login Test</h3>
+            <div id="loginStatus" class="step-result info">Ready to test login</div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 6: Logout Test</h3>
+            <div id="logoutStatus" class="step-result info">Ready to test logout</div>
+        </div>
+        
+        <div class="step">
+            <h3>Debug Log</h3>
+            <button onclick="clearLog()" style="background: #6c757d;">Clear Log</button>
+            <div id="debugLog" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let auth, db, realtimeDB;
+        let debugLog = [];
+        let testEmail = '';
+        let testPassword = '';
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            debugLog.push(logEntry);
+            
+            const logElement = document.getElementById('debugLog');
+            logElement.textContent = debugLog.join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function clearLog() {
+            debugLog = [];
+            document.getElementById('debugLog').textContent = '';
+        }
+        
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `step-result ${type}`;
+        }
+        
+        async function runDiagnosis() {
+            testEmail = document.getElementById('testEmail').value.trim();
+            testPassword = document.getElementById('testPassword').value;
+            
+            if (!testEmail || !testPassword) {
+                alert('Please enter both email and password to test');
+                return;
+            }
+            
+            addLog('=== STARTING DIAGNOSIS ===');
+            
+            // Reset all statuses
+            updateStatus('firebaseStatus', 'Checking Firebase connection...', 'info');
+            updateStatus('authStatus', 'Checking authentication state...', 'info');
+            updateStatus('databaseStatus', 'Checking database connection...', 'info');
+            updateStatus('loginStatus', 'Ready to test login', 'info');
+            updateStatus('logoutStatus', 'Ready to test logout', 'info');
+            
+            // Step 1: Test Firebase
+            await testFirebase();
+            
+            // Step 2: Test Auth State
+            await testAuthState();
+            
+            // Step 3: Test Database
+            await testDatabase();
+            
+            // Step 4: Test Login
+            await testLogin();
+            
+            // Step 5: Test Logout
+            await testLogout();
+            
+            addLog('=== DIAGNOSIS COMPLETE ===');
+        }
+        
+        async function testFirebase() {
+            try {
+                addLog('Testing Firebase initialization...');
+                
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK not loaded');
+                }
+                
+                if (typeof firebaseConfig === 'undefined') {
+                    throw new Error('Firebase config not found');
+                }
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    addLog('Firebase app initialized');
+                } else {
+                    addLog('Firebase app already initialized');
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                realtimeDB = firebase.database();
+                
+                // Test auth persistence
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                addLog('Auth persistence set to LOCAL');
+                
+                updateStatus('firebaseStatus', '✅ Firebase connection successful', 'success');
+                
+            } catch (error) {
+                addLog(`Firebase error: ${error.message}`);
+                updateStatus('firebaseStatus', `❌ Firebase connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAuthState() {
+            try {
+                addLog('Testing authentication state...');
+                
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    addLog(`Current user: ${currentUser.email} (verified: ${currentUser.emailVerified})`);
+                    updateStatus('authStatus', `✅ User logged in: ${currentUser.email}`, 'success');
+                } else {
+                    addLog('No current user');
+                    updateStatus('authStatus', '✅ No user logged in (clean state)', 'success');
+                }
+                
+                // Test auth state listener
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        addLog(`Auth state changed: User logged in (${user.email})`);
+                    } else {
+                        addLog('Auth state changed: User logged out');
+                    }
+                });
+                
+            } catch (error) {
+                addLog(`Auth state error: ${error.message}`);
+                updateStatus('authStatus', `❌ Auth state check failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDatabase() {
+            try {
+                addLog('Testing database connections...');
+                
+                // Test Firestore
+                const testDoc = await db.collection('test').doc('diagnosis').set({
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    test: 'diagnosis'
+                });
+                addLog('Firestore write test successful');
+                
+                // Test Realtime Database
+                await realtimeDB.ref('test/diagnosis').set({
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    test: 'diagnosis'
+                });
+                addLog('Realtime Database write test successful');
+                
+                updateStatus('databaseStatus', '✅ Database connections successful', 'success');
+                
+            } catch (error) {
+                addLog(`Database error: ${error.message}`);
+                updateStatus('databaseStatus', `❌ Database connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                addLog('Testing login process...');
+                updateStatus('loginStatus', '🔄 Testing login...', 'info');
+                
+                // Clear any existing auth state
+                if (auth.currentUser) {
+                    await auth.signOut();
+                    addLog('Signed out previous user');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                let emailToUse = testEmail;
+                
+                // Check if it's a username
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(testEmail)) {
+                    addLog('Input is username, looking up email...');
+                    
+                    const usernameQuery = await db.collection('users').where('username', '==', testEmail).limit(1).get();
+                    
+                    if (usernameQuery.empty) {
+                        throw new Error('Username not found');
+                    }
+                    
+                    const userData = usernameQuery.docs[0].data();
+                    emailToUse = userData.email;
+                    addLog(`Found email for username: ${emailToUse}`);
+                }
+                
+                // Attempt login
+                addLog(`Attempting login with email: ${emailToUse}`);
+                const userCredential = await auth.signInWithEmailAndPassword(emailToUse, testPassword);
+                const user = userCredential.user;
+                
+                addLog(`Login successful: ${user.email}`);
+                
+                // Check email verification
+                await user.reload();
+                addLog(`Email verified: ${user.emailVerified}`);
+                
+                if (!user.emailVerified) {
+                    addLog('Email not verified, signing out...');
+                    await auth.signOut();
+                    updateStatus('loginStatus', '⚠️ Login successful but email not verified', 'warning');
+                } else {
+                    updateStatus('loginStatus', '✅ Login successful and email verified', 'success');
+                }
+                
+            } catch (error) {
+                addLog(`Login error: ${error.code} - ${error.message}`);
+                updateStatus('loginStatus', `❌ Login failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogout() {
+            try {
+                addLog('Testing logout process...');
+                updateStatus('logoutStatus', '🔄 Testing logout...', 'info');
+                
+                // Clear storage
+                localStorage.clear();
+                sessionStorage.clear();
+                addLog('Cleared all local storage');
+                
+                // Sign out
+                await auth.signOut();
+                addLog('Firebase signOut completed');
+                
+                // Wait for auth state to clear
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Check if user is signed out
+                const currentUser = auth.currentUser;
+                if (currentUser) {
+                    throw new Error('User still logged in after signOut');
+                }
+                
+                updateStatus('logoutStatus', '✅ Logout successful', 'success');
+                
+            } catch (error) {
+                addLog(`Logout error: ${error.message}`);
+                updateStatus('logoutStatus', `❌ Logout failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            addLog('Diagnosis tool loaded');
+            
+            // Check if we have any existing auth state
+            setTimeout(() => {
+                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                    const currentUser = firebase.auth().currentUser;
+                    if (currentUser) {
+                        addLog(`Found existing user: ${currentUser.email}`);
+                    } else {
+                        addLog('No existing user found');
+                    }
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

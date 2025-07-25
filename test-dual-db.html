@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dual Database</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dual Database Test</h1>
+    <div id="status"></div>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testDualWrite()">Test Dual Write</button>
+    <button onclick="testRead()">Test Read</button>
+    
+    <div id="results"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Initialize Firebase
+        let auth, db, realtimeDB;
+        
+        function initFirebase() {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(window.firebaseConfig);
+                }
+                auth = firebase.auth();
+                db = firebase.firestore();
+                realtimeDB = firebase.database();
+                
+                addResult('Firebase initialized successfully', 'success');
+            } catch (error) {
+                addResult('Firebase initialization failed: ' + error.message, 'error');
+            }
+        }
+        
+        function addResult(message, type = '') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+        
+        function testConnection() {
+            try {
+                if (db && realtimeDB) {
+                    addResult('Both Firestore and Realtime Database are connected', 'success');
+                } else {
+                    addResult('Connection failed - db: ' + (db ? 'OK' : 'FAILED') + ', realtimeDB: ' + (realtimeDB ? 'OK' : 'FAILED'), 'error');
+                }
+            } catch (error) {
+                addResult('Connection test failed: ' + error.message, 'error');
+            }
+        }
+        
+        async function testDualWrite() {
+            try {
+                const testData = {
+                    message: 'Test data',
+                    timestamp: Date.now(),
+                    testId: Math.random().toString(36).substr(2, 9)
+                };
+                
+                // Write to Firestore
+                await db.collection('test').add({
+                    ...testData,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Write to Realtime Database
+                await realtimeDB.ref('test').push({
+                    ...testData,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                });
+                
+                addResult('Successfully wrote to both databases', 'success');
+            } catch (error) {
+                addResult('Dual write failed: ' + error.message, 'error');
+            }
+        }
+        
+        async function testRead() {
+            try {
+                // Read from Firestore
+                const firestoreSnapshot = await db.collection('test').limit(1).get();
+                const firestoreCount = firestoreSnapshot.size;
+                
+                // Read from Realtime Database
+                const realtimeSnapshot = await realtimeDB.ref('test').once('value');
+                const realtimeData = realtimeSnapshot.val();
+                const realtimeCount = realtimeData ? Object.keys(realtimeData).length : 0;
+                
+                addResult(`Firestore records: ${firestoreCount}, Realtime DB records: ${realtimeCount}`, 'success');
+            } catch (error) {
+                addResult('Read test failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+        });
+    </script>
+</body>
+</html>

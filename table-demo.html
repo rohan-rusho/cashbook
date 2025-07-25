@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions Table Demo - CashBook</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .demo-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .demo-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .theme-switcher {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .theme-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            margin: 0 0.5rem;
+        }
+        .theme-btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>📊 Transactions Table Demo</h1>
+        
+        <div class="theme-switcher">
+            <button class="theme-btn" onclick="setTheme('light')">☀️ Light</button>
+            <button class="theme-btn" onclick="setTheme('dark')">🌙 Dark</button>
+        </div>
+        
+        <div class="demo-card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Transactions</h3>
+                <button class="btn btn-sm btn-secondary">🔄</button>
+            </div>
+            <div class="card-body">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Date</th>
+                            <th>Note</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Salary</td>
+                            <td class="transaction-date">7/18/2025</td>
+                            <td class="transaction-note">Monthly salary payment</td>
+                            <td class="transaction-amount income">+৳4455.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Other</td>
+                            <td class="transaction-date">7/18/2025</td>
+                            <td class="transaction-note">Watch purchase</td>
+                            <td class="transaction-amount expense">-৳4000.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Food</td>
+                            <td class="transaction-date">7/18/2025</td>
+                            <td class="transaction-note">School lunch</td>
+                            <td class="transaction-amount expense">-৳450.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Salary</td>
+                            <td class="transaction-date">7/18/2025</td>
+                            <td class="transaction-note">Tuition fee payment</td>
+                            <td class="transaction-amount income">+৳1200.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Investment</td>
+                            <td class="transaction-date">7/17/2025</td>
+                            <td class="transaction-note">Stock dividend</td>
+                            <td class="transaction-amount income">+৳750.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Transport</td>
+                            <td class="transaction-date">7/17/2025</td>
+                            <td class="transaction-note">Bus fare</td>
+                            <td class="transaction-amount expense">-৳25.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Food</td>
+                            <td class="transaction-date">7/17/2025</td>
+                            <td class="transaction-note">Dinner at restaurant</td>
+                            <td class="transaction-amount expense">-৳350.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Business</td>
+                            <td class="transaction-date">7/16/2025</td>
+                            <td class="transaction-note">Client payment</td>
+                            <td class="transaction-amount income">+৳2500.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Bills</td>
+                            <td class="transaction-date">7/16/2025</td>
+                            <td class="transaction-note">Electricity bill</td>
+                            <td class="transaction-amount expense">-৳180.00</td>
+                        </tr>
+                        <tr class="transaction-row">
+                            <td class="transaction-title">Freelance</td>
+                            <td class="transaction-date">7/15/2025</td>
+                            <td class="transaction-note">Website development project</td>
+                            <td class="transaction-amount income">+৳1800.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="demo-card">
+            <h3>📱 Mobile View</h3>
+            <p>The table is responsive and will adapt to smaller screens. On mobile devices, the note column will be truncated with ellipsis, and padding will be reduced for better fit.</p>
+            
+            <div style="border: 2px solid var(--border); border-radius: var(--radius); padding: 1rem; margin: 1rem 0;">
+                <p><strong>Features:</strong></p>
+                <ul>
+                    <li>✅ Clean table layout with proper headers</li>
+                    <li>✅ Hover effects on rows</li>
+                    <li>✅ Color-coded amounts (green for income, red for expense)</li>
+                    <li>✅ Responsive design for mobile</li>
+                    <li>✅ Proper typography and spacing</li>
+                    <li>✅ Dark mode support</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        console.log('🎨 Table demo loaded');
+    </script>
+</body>
+</html>
